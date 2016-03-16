@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+import document_pb2
+import struct
+import sys
+
+
+class DocumentStreamReader:
+    def __init__(self, path):
+        self.stream = open(path, 'rb')
+
+    def __iter__(self):
+        while True:
+            sb = self.stream.read(4)
+            if sb == '':
+                return
+
+            size = struct.unpack('i', sb)[0]
+            msg = self.stream.read(size)
+            doc = document_pb2.document()
+            doc.ParseFromString(msg)
+            yield doc
+
+
+def main():
+    reader = DocumentStreamReader(sys.argv[1])
+    for doc in reader:
+        print doc.url, len(doc.body)
+
+
+if __name__ == '__main__':
+    main()

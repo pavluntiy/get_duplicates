@@ -1,0 +1,6 @@
+package go.mail.ru;
+
+message document {
+    required string url = 1;
+    optional string body = 2;
+}
