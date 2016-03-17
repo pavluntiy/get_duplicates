@@ -13,7 +13,7 @@ from google.protobuf import descriptor_pb2
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='document.proto',
   package='go.mail.ru',
-  serialized_pb='\n\x0e\x64ocument.proto\x12\ngo.mail.ru\"%\n\x08\x64ocument\x12\x0b\n\x03url\x18\x01 \x02(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t')
+  serialized_pb='\n\x0e\x64ocument.proto\x12\ngo.mail.ru\"3\n\x08\x64ocument\x12\x0b\n\x03url\x18\x01 \x02(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t\x12\x0c\n\x04text\x18\x03 \x01(\t')
 
 
 
@@ -39,6 +39,13 @@ _DOCUMENT = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='text', full_name='go.mail.ru.document.text', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=unicode("", "utf-8"),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -49,7 +56,7 @@ _DOCUMENT = _descriptor.Descriptor(
   is_extendable=False,
   extension_ranges=[],
   serialized_start=30,
-  serialized_end=67,
+  serialized_end=81,
 )
 
 DESCRIPTOR.message_types_by_name['document'] = _DOCUMENT

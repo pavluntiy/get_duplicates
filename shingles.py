@@ -13,7 +13,7 @@ import subprocess
 
 k = 10
 
-word_re = re.compile(r'\W+')
+word_re = re.compile(r'\w+', flags = re.UNICODE)
 
 
 htmls = []
@@ -55,19 +55,45 @@ def read_documents(path):
 	zcat = subprocess.Popen(["zcat"] + files, stdout=subprocess.PIPE)
 	reader = DocumentStreamReader(zcat.stdout)
 	for document in reader:
-		# document.body = htmlparse.parse_html(document.body)
-		# yield document.url, htmlparse.parse_html(document.body)
 		yield document.url, document.text
 
 
+def get_draft(doc, k, w):
+	baskets = [[] for i in range(w)]
+	for shingle in get_shingles(doc, k = 5):
+		h = mmh3.hash(shingle.encode("utf-8")) 
+		baskets[h % w].append(h)
 
-i = 0
-path = "./dataset"
-for doc in read_documents(path):
-	i += 1
-	if i % 100 == 0:
-		print i
-print i
+	draft = set()
+	for i in range(w):
+		draft |= {min(baskets[i])}
+
+	
+	return draft
+
+
+def get_sets(k = 5, w = 20):
+	path = "./dataset"
+
+	ids = dict()
+	sets = []
+	i = 0
+	for url, doc in read_documents(path):
+		sets.append(get_draft(doc, k, w))
+		ids[i] = url
+		i += 1
+
+	return sets
+
+def get_shingles(doc, k = 5):
+	words = re.findall(word_re, doc)
+	for i in xrange(len(words) - k):
+		yield " ".join(words[i:i + k])
+
+
+
+print get_sets()
+
 
 
 # for i in xrange(len(words) - k):

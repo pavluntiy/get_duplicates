@@ -25,7 +25,11 @@ class DocumentStreamReader:
 def main():
     reader = DocumentStreamReader(sys.argv[1])
     for doc in reader:
-        print doc.url, len(doc.body)
+        print "%s\tbody: %d, text: %d" % (
+            doc.url,
+            len(doc.body) if doc.HasField('body') else 0,
+            len(doc.text) if doc.HasField('text') else 0
+        )
 
 
 if __name__ == '__main__':
