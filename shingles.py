@@ -2,8 +2,8 @@
 import html2text
 from collections import Counter
 
-from src import htmlparse
-from src.docreader import DocumentStreamReader
+# from src import htmlparse
+# from src.docreader import DocumentStreamReader
 import re
 import os
 
@@ -15,9 +15,11 @@ import time
 
 
 
-from src import document_pb2
+# from src import document_pb2
+import document_pb2
 import struct
 import sys
+import string
 
 class DocumentStreamReader:
     def __init__(self, stream):
@@ -79,47 +81,53 @@ def get_sets(file_list, k = 5, w = 20):
 	return sets, ids
 
 word_re = re.compile(r'\w+', flags = re.UNICODE)
+remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
 def get_shingles(doc, k):
-	words = re.findall(word_re, doc)
-	for i in xrange(len(words) - k):
-		yield " ".join(words[i:i + k])
+    words = re.findall(word_re, doc)
+    words = map(lambda s: s.translate(remove_punctuation_map), words)
+    result = []
+    for i in xrange(len(words) - k):
+		result.append(" ".join(words[i:i + k]))
+
+    return result   
 
 
 
 
 def get_similarities(file_list):
-	timestamp = time.time()
-	sets, ids = get_sets(file_list)
+    timestamp = time.time()
+    sets, ids = get_sets(file_list)
 
-	result = []	
-	# print "Going to find similarities"
-	total = 0
-	for i in xrange(len(sets)):
-		for j in xrange(i + 1, len(sets)):
-			if len(sets[i]) == 0 and len(sets[j]) == 0:
-				continue
-			# if total % 10000 == 0:
-				# print "Processed {0} of {1}".format(total,  len(sets)**2)
+    # print len(sets)
+    result = []	
+    # print "Going to find similarities"
+    total = 0
+    for i in xrange(len(sets)):
+    	for j in xrange(i + 1, len(sets)):
+    		if len(sets[i]) == 0 and len(sets[j]) == 0:
+    			continue
+    		# if total % 10000 == 0:
+    			# print "Processed {0} of {1}".format(total,  len(sets)**2)
 
-			jacc = len(sets[i] & sets[j]) * 1.0 / len(sets[i] | sets[j])
-			if jacc > 0.6:
-				result.append((i, j, jacc))
+    		jacc = len(sets[i] & sets[j]) * 1.0 / len(sets[i] | sets[j])
+    		if jacc > 0.75:
+    			result.append((i, j, jacc))
 
-			total += 1
+    		total += 1
 
 
-	# print "Found {0} similarities in {1} seconds".format(len(result), time.time() - timestamp)
-	result = [(ids[it[0]], ids[it[1]], it[2]) for it in result]
-	return result
+    # print "Found {0} similarities in {1} seconds".format(len(result), time.time() - timestamp)
+    result = [(ids[it[0]], ids[it[1]], it[2]) for it in result]
+    return result
 
 
 def process(file_list):
-	result = get_similarities(file_list)
+    result = get_similarities(file_list)
 
-	for it in result:
-		# print "'{0}' ~ '{1}' == {2}".format(it[0], it[1], it[2])
-		print "{0} {1} {2}".format(it[0], it[1], it[2])
+    for it in result:
+        print "{0} {1} {2}".format(it[0], it[1], it[2])
 
+    # print len(result)
 
 
 def main():
@@ -128,7 +136,7 @@ def main():
 		file_list = [os.path.join(path, f) for f in os.listdir(path)]
 
 	else:
-		file_list = [sys.argv[1]]
+		file_list = sys.argv[1:]
 	process(file_list)
 
 if __name__ == "__main__":
