@@ -113,8 +113,8 @@ def get_similarities(file_list):
     # # print len(hashes)
 
     # # hashes = sorted(hashes)
-    print time.time() - timestamp
-    print "Got hashes!"
+    # print time.time() - timestamp
+    # print "Got hashes!"
 
     os.system("mkdir little")
     os.system("mkdir tmp")
@@ -147,7 +147,7 @@ def get_similarities(file_list):
                 # little.write("{0} {1}\n".format(h[i], h[j]))
                 # little.write("{1} {0}\n".format(h[i], h[j]))
                 tmp.append((h[i], h[j]))
-                # tmp.append((h[j], h[i]))
+                tmp.append((h[j], h[i]))
                 cnt += 1
 
     if tmp != []:
@@ -158,20 +158,20 @@ def get_similarities(file_list):
         little.close()
 
     # little.close()
-    print cnt
-    print "Going to sort!"
+    # print cnt
+    # print "Going to sort!"
 
     # os.system("split -l 10000 ./little/little.csv ./little/little_part")
     # os.system(" sort --batch-size=10 --temporary-directory=./little --buffer-size=1000000000 -k1,1n -k2,2n  --parallel=16 -o sorted.csv ./little/little_part* ")
     # os.system(" c")
-    os.system(" sort  -k1,1n -k2,2n --batch-size=2000 --temporary-directory=./tmp --parallel=2 -o./sorted.csv ./little/little_*.csv")
+    os.system(" sort -m -k1,1n -k2,2n --buffer-size=1500000 --temporary-directory=./tmp --parallel=16 -o./sorted.csv ./little/little_*.csv")
 
     # ld = np.loadtxt("sorted.csv")
 
     # print ld.shape
-    # os.system("rm -rf little")
-    # os.system("rm -rf tmp")
-    print "Sorted", time.time() - timestamp
+    os.system("rm -rf little")
+    os.system("rm -rf tmp")
+    # print "Sorted", time.time() - timestamp
     f = open("sorted.csv", "r")
 
     pr1 = None
@@ -196,7 +196,9 @@ def get_similarities(file_list):
             jacc = cnt * 1.0/(cnt + 2 * (w - cnt))
             # print jacc
             if jacc > thr:
-                result.append((pr1, pr2, jacc))
+                # result.append((pr1, pr2, jacc))
+
+                print ids[pr1], ids[pr2], jacc
 
             cnt = 0
 
@@ -233,17 +235,17 @@ def get_similarities(file_list):
 
 
     # print "Found {0} similarities in {1} seconds".format(len(result), time.time() - timestamp)
-    result = [(ids[it[0]], ids[it[1]], it[2]) for it in result]
-    return result
+    # result = [(ids[it[0]], ids[it[1]], it[2]) for it in result]
+    # return result
 
 
 def process(file_list):
-    result = get_similarities(file_list)
+    get_similarities(file_list)
 
     # for it in result:
     #     print "{0} {1} {2}".format(it[0], it[1], it[2])
 
-    print len(result)
+    # print len(result)
 
 
 def main():
