@@ -116,34 +116,61 @@ def get_similarities(file_list):
     print time.time() - timestamp
     print "Got hashes!"
 
-    # os.system("mkdir little")
+    os.system("mkdir little")
+    os.system("mkdir tmp")
     # little = open("./little/little.csv", "w")
-    little = open("little.csv", "w")
+    
     # # # for 
     # # # counter = Counter()
     cnt = 0
+    tmp = []
     for _, h in hashes.iteritems():
+
+        # little = open("little.csv", "w")
         for i in range(len(h)):
             for j in range(i + 1, len(h)):
+                if cnt % 1000000 == 0:
+
+                    if cnt != 0:
+                        # print "Reset", cnt 
+                        tmp = sorted(tmp)
+                        for it in tmp:
+                            little.write("{0} {1}\n".format(it[0], it[1]))
+                        del tmp
+                        tmp = []
+                        little.close()
+                    little = open("./little/little_{0}.csv".format(cnt), "w")
+
+
                 # counter[(h[i], h[j])] += 1
                 # counter[(h[j], h[i])] += 1
-                little.write("{0} {1}\n".format(h[i], h[j]))
-                little.write("{1} {0}\n".format(h[i], h[j]))
+                # little.write("{0} {1}\n".format(h[i], h[j]))
+                # little.write("{1} {0}\n".format(h[i], h[j]))
+                tmp.append((h[i], h[j]))
+                # tmp.append((h[j], h[i]))
                 cnt += 1
 
-    little.close()
+    if tmp != []:
+        tmp = sorted(tmp)
+        for it in tmp:
+            little.write("{0} {1}\n".format(it[0], it[1]))
+        del tmp
+        little.close()
+
+    # little.close()
     print cnt
     print "Going to sort!"
 
     # os.system("split -l 10000 ./little/little.csv ./little/little_part")
     # os.system(" sort --batch-size=10 --temporary-directory=./little --buffer-size=1000000000 -k1,1n -k2,2n  --parallel=16 -o sorted.csv ./little/little_part* ")
     # os.system(" c")
-    os.system(" sort -k1,1n -k2,2n  --parallel=2 -o sorted.csv little.csv")
+    os.system(" sort  -k1,1n -k2,2n --batch-size=2000 --temporary-directory=./tmp --parallel=2 -o./sorted.csv ./little/little_*.csv")
 
     # ld = np.loadtxt("sorted.csv")
 
     # print ld.shape
     # os.system("rm -rf little")
+    # os.system("rm -rf tmp")
     print "Sorted", time.time() - timestamp
     f = open("sorted.csv", "r")
 
@@ -165,6 +192,7 @@ def get_similarities(file_list):
                 pr2 = cur2
                 continue
 
+            # print cnt
             jacc = cnt * 1.0/(cnt + 2 * (w - cnt))
             # print jacc
             if jacc > thr:
@@ -212,8 +240,8 @@ def get_similarities(file_list):
 def process(file_list):
     result = get_similarities(file_list)
 
-    for it in result:
-        print "{0} {1} {2}".format(it[0], it[1], it[2])
+    # for it in result:
+    #     print "{0} {1} {2}".format(it[0], it[1], it[2])
 
     print len(result)
 
