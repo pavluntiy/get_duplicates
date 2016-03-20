@@ -13,6 +13,8 @@ import subprocess
 
 import time
 
+import numpy as np
+
 
 
 # from src import document_pb2
@@ -69,11 +71,13 @@ def get_sets(file_list, k = 5, w = 20):
     ids = dict()
     # sets = []
     hashes = defaultdict(lambda: [])
+    # hashes  = []
     i = 0
     for url, doc in read_documents(file_list):
     	# sets.append(get_draft(doc, k, w))
         for h in get_draft(doc, k, w):
             hashes[h].append(i)
+            # hashes.append((h, i))
     	ids[i] = url
     	# if i % 100 == 0:
     	# 	print "Got sets {0} urls".format(i)
@@ -105,25 +109,80 @@ def get_similarities(file_list):
     timestamp = time.time()
     hashes, ids = get_sets(file_list, w = 20, k = 5)
 
-    # print hashes
+    # # print hashes
+    # # print len(hashes)
 
+    # # hashes = sorted(hashes)
     print time.time() - timestamp
     print "Got hashes!"
 
-    counter = Counter()
-
+    # os.system("mkdir little")
+    # little = open("./little/little.csv", "w")
+    little = open("little.csv", "w")
+    # # # for 
+    # # # counter = Counter()
+    cnt = 0
     for _, h in hashes.iteritems():
         for i in range(len(h)):
             for j in range(i + 1, len(h)):
-                counter[(h[i], h[j])] += 1
-                counter[(h[j], h[i])] += 1
+                # counter[(h[i], h[j])] += 1
+                # counter[(h[j], h[i])] += 1
+                little.write("{0} {1}\n".format(h[i], h[j]))
+                little.write("{1} {0}\n".format(h[i], h[j]))
+                cnt += 1
 
+    little.close()
+    print cnt
+    print "Going to sort!"
 
+    # os.system("split -l 10000 ./little/little.csv ./little/little_part")
+    # os.system(" sort --batch-size=10 --temporary-directory=./little --buffer-size=1000000000 -k1,1n -k2,2n  --parallel=16 -o sorted.csv ./little/little_part* ")
+    # os.system(" c")
+    os.system(" sort -k1,1n -k2,2n  --parallel=2 -o sorted.csv little.csv")
+
+    # ld = np.loadtxt("sorted.csv")
+
+    # print ld.shape
+    # os.system("rm -rf little")
+    print "Sorted", time.time() - timestamp
+    f = open("sorted.csv", "r")
+
+    pr1 = None
+    pr2 = None
+    cnt = 0
     result = []
-    for key, value in counter.iteritems():
-        jacc = value * 1.0/(value + 2 * (w - value))
-        if jacc > thr:
-            result.append((key[0], key[1], jacc))
+    line = f.readline()
+    while line != "":
+
+        cur1, cur2 = map(int, line.strip().split(' '))
+    #     del line
+        if cur1 == pr1 and cur2 == pr2:
+            cnt += 1
+        else:
+            # print cur1, cur2
+            if pr1 is None:
+                pr1 = cur1
+                pr2 = cur2
+                continue
+
+            jacc = cnt * 1.0/(cnt + 2 * (w - cnt))
+            # print jacc
+            if jacc > thr:
+                result.append((pr1, pr2, jacc))
+
+            cnt = 0
+
+        pr1 = cur1
+        pr2 = cur2
+        line = f.readline()
+        # print pr1, pr2
+
+
+  
+    # for key, value in counter.iteritems():
+    #     jacc = value * 1.0/(value + 2 * (w - value))
+    #     if jacc > thr:
+    #         result.append((key[0], key[1], jacc))
 
 
                 
