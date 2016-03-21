@@ -57,12 +57,12 @@ def get_draft(doc, k, w):
     	h = mmh3.hash(shingle.encode("utf-8")) 
     	baskets[h % w].append(h)
 
-    # draft = set()
-    draft = []
+    draft = set()
+    # draft = []
     for i in range(w):
     	if baskets[i]:
-    	# 	draft |= {min(baskets[i])}
-            draft.append(min(baskets[i]))
+    		draft |= {min(baskets[i])}
+            # draft.append(min(baskets[i]))
 
     # print draft
 
@@ -73,13 +73,19 @@ def get_draft(doc, k, w):
 def get_sets(file_list, k = 5, w = 20):
 
     ids = dict()
-    # sets = []
+    sets = []
     hashes = defaultdict(lambda: [])
     # hashes  = []
+
+    counter = Counter()
     i = 0
     for url, doc in read_documents(file_list):
-    	# sets.append(get_draft(doc, k, w))
-        for h in get_draft(doc, k, w):
+    	
+        d = get_draft(doc, k, w)
+        sets.append(d)
+        counter.update(d)
+        # print d
+        for h in d:
             hashes[h].append(i)
             # hashes.append((h, i))
         # print i, url
@@ -90,7 +96,14 @@ def get_sets(file_list, k = 5, w = 20):
     	# if i % 100 == 0:
     	# 	print i
     # print "Got sets!"
-    return hashes, ids
+    # return sets, ids
+    total_cnt = 0
+    for k, v in counter.iteritems():
+        if v > 1:
+            total_cnt += v*(v - 1) / 2
+            # print counter[k], len(hashes[k])    
+    # print total_cnt
+    return hashes, sets, ids
 
 word_re = re.compile(r'\w+', flags = re.UNICODE)
 remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
@@ -112,7 +125,23 @@ def get_similarities(file_list):
     thr = 0.75
 
     timestamp = time.time()
-    hashes, ids = get_sets(file_list, w = w, k = k)
+    hashes, sets, ids = get_sets(file_list, w = w, k = k)
+
+    # jaccs = defaultdict(lambda:[])
+
+    # print sets[480]
+    # print sets[558]
+    jaccs = dict()
+    for i in range(len(sets)):
+        for j in range(i + 1, len(sets)):
+            if  len(sets[i] | sets[j]):
+                jacc = len(sets[i] & sets[j]) * 1.0 / len(sets[i] | sets[j])
+            if jacc > thr:
+                # print ids[i], ids[j], jacc
+                jaccs[(i, j)] = jacc
+
+    # return
+
 
     # for key, value in ids.iteritems():
     #     print key, value
@@ -134,10 +163,11 @@ def get_similarities(file_list):
     # # # counter = Counter()
     cnt = 0
     tmp = []
+    total_cnt = 0
     for _, h in hashes.iteritems():
 
         # little = open("little.csv", "w")
-        # :
+        total_cnt += len(h) * (len(h) - 1) / 2 
         for i in range(len(h)):
             for j in range(i + 1, len(h)):
                 if cnt % 1000000 == 0:
@@ -162,15 +192,16 @@ def get_similarities(file_list):
                 # tmp.append((h[j], h[i]))
                 cnt += 1
 
+    # print total_cnt
     if tmp != []:
         tmp = sorted(tmp)
         for it in tmp:
             little.write("{0} {1}\n".format(it[0], it[1]))
-        del tmp
+        # del tmp
         little.close()
 
     # little.close()
-    print "Total pairs:", cnt
+    # print "Total pairs:", cnt
     # print "Going to sort!"
 
     # os.system("split -l 10000 ./little/little.csv ./little/little_part")
@@ -192,12 +223,14 @@ def get_similarities(file_list):
     result = []
     line = f.readline()
     pr1, pr2 = map(int, line.strip().split(' '))
+    # pr1, pr2 = tmp[0]
     line = f.readline()
     iter_cnt = 0
     while line != "":
 
         cur1, cur2 = map(int, line.strip().split(' '))
-    #     del line
+        # cur1, cur2 = tmp[iter_cnt]
+        # del line
         # print cur1, cur2
         if cur1 == pr1 and cur2 == pr2:
             # if cur1 != cur2:
@@ -217,10 +250,18 @@ def get_similarities(file_list):
                 # print jacc, cnt
             if jacc > thr:
                 # result.append((pr1, pr2, jacc))
-                pass
-                # print pr1, pr2, cnt, jacc
-                print ids[pr1], ids[pr2], jacc
+                # pass
+                # print pr1, pr2, cnt, joinacc
+                r = (pr1, pr2)
+                if r in jaccs:
+                    # if jaccs[(ids[pr1], ids[pr2])] != jacc:
+                    #      raise ValueError((ids[pr1], ids[pr2]), jacc)
+                    del jaccs[r]
+                else:
+                    raise ValueError(r, jacc)
+                # print ids[pr1], ids[pr2], jacc
 
+            # iter_cnt += cnt
             cnt = 1
 
         pr1 = cur1
@@ -229,7 +270,14 @@ def get_similarities(file_list):
         iter_cnt += 1
         # print pr1, pr2
 
-    print "Loaded", iter_cnt
+    jacc = cnt * 1.0/(cnt + 2 * (w - cnt))
+    if jacc > thr:
+            print ids[pr1], ids[pr2], jacc
+    iter_cnt += cnt
+
+    print jaccs
+
+    # print "Loaded", iter_cnt
   
     # for key, value in counter.iteritems():
     #     jacc = value * 1.0/(value + 2 * (w - value))
