@@ -73,7 +73,8 @@ def get_draft(doc, k, w):
 def get_sets(file_list, k = 5, w = 20):
 
     ids = dict()
-    sets = []
+    # sets = []
+    lens = defaultdict(lambda: 0)
     hashes = defaultdict(lambda: [])
     # hashes  = []
 
@@ -82,11 +83,12 @@ def get_sets(file_list, k = 5, w = 20):
     for url, doc in read_documents(file_list):
     	
         d = get_draft(doc, k, w)
-        sets.append(d)
+        # sets.append(d)
         counter.update(d)
         # print d
         for h in d:
             hashes[h].append(i)
+        lens[i] = len(d)
             # hashes.append((h, i))
         # print i, url
     	ids[i] = url
@@ -97,13 +99,14 @@ def get_sets(file_list, k = 5, w = 20):
     	# 	print i
     # print "Got sets!"
     # return sets, ids
-    total_cnt = 0
-    for k, v in counter.iteritems():
-        if v > 1:
-            total_cnt += v*(v - 1) / 2
+    # total_cnt = 0
+    # for k, v in counter.iteritems():
+    #     if v > 1:
+    #         total_cnt += v*(v - 1) / 2
             # print counter[k], len(hashes[k])    
     # print total_cnt
-    return hashes, sets, ids
+    # print lens
+    return hashes, lens, ids
 
 word_re = re.compile(r'\w+', flags = re.UNICODE)
 remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
@@ -125,20 +128,20 @@ def get_similarities(file_list):
     thr = 0.75
 
     timestamp = time.time()
-    hashes, sets, ids = get_sets(file_list, w = w, k = k)
+    hashes, lens, ids = get_sets(file_list, w = w, k = k)
 
     # jaccs = defaultdict(lambda:[])
 
     # print sets[480]
     # print sets[558]
-    jaccs = dict()
-    for i in range(len(sets)):
-        for j in range(i + 1, len(sets)):
-            if  len(sets[i] | sets[j]):
-                jacc = len(sets[i] & sets[j]) * 1.0 / len(sets[i] | sets[j])
-            if jacc > thr:
-                # print ids[i], ids[j], jacc
-                jaccs[(i, j)] = jacc
+    # jaccs = dict()
+    # for i in range(len(sets)):
+    #     for j in range(i + 1, len(sets)):
+    #         if  len(sets[i] | sets[j]):
+    #             jacc = len(sets[i] & sets[j]) * 1.0 / len(sets[i] | sets[j])
+    #         if jacc > thr:
+    #             # print ids[i], ids[j], jacc
+    #             jaccs[(i, j)] = jacc
 
     # return
 
@@ -243,23 +246,28 @@ def get_similarities(file_list):
             #     continue
 
             # print cnt
-            jacc = cnt * 1.0/(cnt + 2 * (w - cnt))
+            # print lens[i], lens[j]
+            if lens[pr1] + lens[pr2] - cnt:
+                jacc = cnt * 1.0/(lens[pr1] + lens[pr2] - cnt)
+            else:
+                jacc = 1.0
+            # print cnt, lens[pr1], lens[pr2]
             # jacc = cnt * 1.0/w
             # print jacc
             # if cnt > 0:
                 # print jacc, cnt
             if jacc > thr:
                 # result.append((pr1, pr2, jacc))
-                # pass
+                pass
                 # print pr1, pr2, cnt, joinacc
-                r = (pr1, pr2)
-                if r in jaccs:
-                    # if jaccs[(ids[pr1], ids[pr2])] != jacc:
-                    #      raise ValueError((ids[pr1], ids[pr2]), jacc)
-                    del jaccs[r]
-                else:
-                    raise ValueError(r, jacc)
-                # print ids[pr1], ids[pr2], jacc
+                # r = (pr1, pr2)
+                # if r in jaccs:
+                #     # if jaccs[(ids[pr1], ids[pr2])] != jacc:
+                #     #      raise ValueError((ids[pr1], ids[pr2]), jacc)
+                #     del jaccs[r]
+                # else:
+                #     raise ValueError(r, jacc)
+                print ids[pr1], ids[pr2], jacc
 
             # iter_cnt += cnt
             cnt = 1
@@ -270,12 +278,15 @@ def get_similarities(file_list):
         iter_cnt += 1
         # print pr1, pr2
 
-    jacc = cnt * 1.0/(cnt + 2 * (w - cnt))
+    if lens[pr1] + lens[pr2] - cnt:
+        jacc = cnt * 1.0/(lens[pr1] + lens[pr2] - cnt)
+    else:
+        jacc = 1.0
     if jacc > thr:
             print ids[pr1], ids[pr2], jacc
-    iter_cnt += cnt
-
-    print jaccs
+    # iter_cnt += cnt
+#
+    # print jaccs
 
     # print "Loaded", iter_cnt
   
