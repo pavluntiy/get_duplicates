@@ -52,18 +52,22 @@ def read_documents(file_list):
 
 
 def get_draft(doc, k, w):
-	baskets = [[] for i in range(w)]
-	for shingle in get_shingles(doc, k = 5):
-		h = mmh3.hash(shingle.encode("utf-8")) 
-		baskets[h % w].append(h)
+    baskets = [[] for i in range(w)]
+    for shingle in get_shingles(doc, k = 5):
+    	h = mmh3.hash(shingle.encode("utf-8")) 
+    	baskets[h % w].append(h)
 
-	draft = set()
-	for i in range(w):
-		if baskets[i]:
-			draft |= {min(baskets[i])}
+    # draft = set()
+    draft = []
+    for i in range(w):
+    	if baskets[i]:
+    	# 	draft |= {min(baskets[i])}
+            draft.append(min(baskets[i]))
 
-	
-	return draft
+    # print draft
+
+
+    return draft
 
 
 def get_sets(file_list, k = 5, w = 20):
@@ -78,6 +82,7 @@ def get_sets(file_list, k = 5, w = 20):
         for h in get_draft(doc, k, w):
             hashes[h].append(i)
             # hashes.append((h, i))
+        # print i, url
     	ids[i] = url
     	# if i % 100 == 0:
     	# 	print "Got sets {0} urls".format(i)
@@ -107,8 +112,13 @@ def get_similarities(file_list):
     thr = 0.75
 
     timestamp = time.time()
-    hashes, ids = get_sets(file_list, w = 20, k = 5)
+    hashes, ids = get_sets(file_list, w = w, k = k)
 
+    # for key, value in ids.iteritems():
+    #     print key, value
+
+    # for hl, value in hashes.iteritems():
+    #     print value
     # # print hashes
     # # print len(hashes)
 
@@ -127,6 +137,7 @@ def get_similarities(file_list):
     for _, h in hashes.iteritems():
 
         # little = open("little.csv", "w")
+        # :
         for i in range(len(h)):
             for j in range(i + 1, len(h)):
                 if cnt % 1000000 == 0:
@@ -146,8 +157,9 @@ def get_similarities(file_list):
                 # counter[(h[j], h[i])] += 1
                 # little.write("{0} {1}\n".format(h[i], h[j]))
                 # little.write("{1} {0}\n".format(h[i], h[j]))
+                # print (h[i], h[j])
                 tmp.append((h[i], h[j]))
-                tmp.append((h[j], h[i]))
+                # tmp.append((h[j], h[i]))
                 cnt += 1
 
     if tmp != []:
@@ -158,7 +170,7 @@ def get_similarities(file_list):
         little.close()
 
     # little.close()
-    # print cnt
+    print "Total pairs:", cnt
     # print "Going to sort!"
 
     # os.system("split -l 10000 ./little/little.csv ./little/little_part")
@@ -174,40 +186,50 @@ def get_similarities(file_list):
     # print "Sorted", time.time() - timestamp
     f = open("sorted.csv", "r")
 
-    pr1 = None
-    pr2 = None
-    cnt = 0
+    # pr1 = None
+    # pr2 = None
+    cnt = 1
     result = []
     line = f.readline()
+    pr1, pr2 = map(int, line.strip().split(' '))
+    line = f.readline()
+    iter_cnt = 0
     while line != "":
 
         cur1, cur2 = map(int, line.strip().split(' '))
     #     del line
+        # print cur1, cur2
         if cur1 == pr1 and cur2 == pr2:
+            # if cur1 != cur2:
             cnt += 1
         else:
             # print cur1, cur2
-            if pr1 is None:
-                pr1 = cur1
-                pr2 = cur2
-                continue
+            # if pr1 is None:
+            #     pr1 = cur1
+            #     pr2 = cur2
+            #     continue
 
             # print cnt
             jacc = cnt * 1.0/(cnt + 2 * (w - cnt))
+            # jacc = cnt * 1.0/w
             # print jacc
+            # if cnt > 0:
+                # print jacc, cnt
             if jacc > thr:
                 # result.append((pr1, pr2, jacc))
-
+                pass
+                # print pr1, pr2, cnt, jacc
                 print ids[pr1], ids[pr2], jacc
 
-            cnt = 0
+            cnt = 1
 
         pr1 = cur1
         pr2 = cur2
         line = f.readline()
+        iter_cnt += 1
         # print pr1, pr2
 
-
+    print "Loaded", iter_cnt
   
     # for key, value in counter.iteritems():
     #     jacc = value * 1.0/(value + 2 * (w - value))
